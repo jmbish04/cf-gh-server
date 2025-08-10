@@ -1,0 +1,16 @@
+name = "cf-gh-server"
+main = "src/index.ts"
+compatibility_date = "2024-04-05"
+node_compat = true
+
+[vars]
+GITHUB_OWNER = "jmbish04"
+WORKER_URL = "https://your-worker-url.workers.dev" # TODO: Replace with actual worker URL after first deployment
+
+[triggers]
+# Run the scheduled handler every hour
+crons = ["0 * * * *"]
+
+[secrets]
+GITHUB_TOKEN
+WEBHOOK_SECRET
