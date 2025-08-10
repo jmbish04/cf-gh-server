@@ -11,6 +11,7 @@
 import { Octokit } from 'octokit';
 import { applyPatch } from 'diff';
 import { RepoConfig, CodeSuggestion } from './types';
+import type { PullRequestEvent, IssueCommentEvent } from '@octokit/webhooks-types';
 
 export interface Env {
 	GITHUB_OWNER: string;
@@ -77,7 +78,7 @@ export default {
 		return new Response('Webhook event received and is being processed.', { status: 202 });
 	},
 
-	async handleEvent(event: string, payload: any, octokit: Octokit, config: RepoConfig, env: Env) {
+	async handleEvent(event: string, payload: PullRequestEvent | IssueCommentEvent | any, octokit: Octokit, config: RepoConfig, env: Env) {
 		const repo = payload.repository;
 		let prNumber: number | undefined;
 
@@ -127,7 +128,7 @@ export default {
 			});
 
 			const botUsername = config.bot_username || 'gemini-code-assist[bot]';
-			const botComments = comments.filter(comment => comment.user?.login === botUsername);
+			const botComments = comments.filter((comment: any) => comment.user?.login === botUsername);
 			console.log(`[${repo.full_name}] Found ${botComments.length} comments from bot '${botUsername}' on PR #${prNumber}.`);
 
 			for (const comment of botComments) {
@@ -214,7 +215,7 @@ export default {
 						repo: repoName,
 						content,
 						encoding: 'utf-8',
-					}).then(response => ({
+					}).then((response: any) => ({
 						path: filePath,
 						sha: response.data.sha,
 						mode: '100644' as const,
@@ -365,13 +366,20 @@ export default {
 
 	parseSuggestionsFromComment(commentBody: string): CodeSuggestion[] {
 		const suggestions: CodeSuggestion[] = [];
-		// This regex looks for a diff block for a specific file.
-		const codeBlockRegex = /```diff\n--- a\/(.+?)\n\+\+\+ b\/.+?\n([\s\S]+?)```/g;
+		// This regex looks for a diff block for a specific file, allowing for indentation
+		const codeBlockRegex = /```diff\s*\n\s*--- a\/(.+?)\n\s*\+\+\+ b\/.+?\n([\s\S]+?)```/g;
 
 		let match;
 		while ((match = codeBlockRegex.exec(commentBody)) !== null) {
 			const filePath = match[1].trim();
-			const diff = match[2].trim();
+			let diff = match[2].trim();
+			
+			// Clean up the diff by removing leading whitespace from each line
+			diff = diff
+				.split('\n')
+				.map(line => line.replace(/^\s+/, ''))
+				.join('\n');
+				
 			if (filePath && diff) {
 				suggestions.push({ filePath, diff });
 			}
@@ -447,7 +455,7 @@ export default {
 		try {
 			const { data: webhooks } = await octokit.rest.repos.listWebhooks({ owner, repo });
 
-			const managedWebhook = webhooks.find(webhook => webhook.config.url === webhookUrl);
+			const managedWebhook = webhooks.find((webhook: any) => webhook.config.url === webhookUrl);
 
 			if (managedWebhook) {
 				console.log(`[${owner}/${repo}] Found existing managed webhook.`);
