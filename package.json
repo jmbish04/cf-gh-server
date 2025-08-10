@@ -1,0 +1,23 @@
+{
+  "name": "cf-gh-server",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "start": "wrangler dev",
+    "test": "vitest run --reporter=verbose",
+    "test:ci": "vitest run --reporter=verbose"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240403.0",
+    "@types/diff": "^7.0.2",
+    "typescript": "^5.0.4",
+    "vitest": "1.3.0",
+    "wrangler": "^3.47.0"
+  },
+  "dependencies": {
+    "diff": "^8.0.2",
+    "octokit": "^5.0.3"
+  }
+}
